@@ -136,14 +136,19 @@ void ProcessList_printHeader(ProcessList* this, RichString* header) {
 }
 
 void ProcessList_add(ProcessList* this, Process* p) {
-   assert(Vector_indexOf(this->processes, p, Process_pidCompare) == -1);
-   assert(Hashtable_get(this->processTable, p->pid) == NULL);
-   
+   void* ht = Hashtable_get(this->processTable, p->pid);
+   int vector = Vector_indexOf(this->processes, p, Process_pidCompare);
+
+   assert(vector == -1);
+   assert(ht == NULL);
+ 
    Vector_add(this->processes, p);
    Hashtable_put(this->processTable, p->pid, p);
    
-   assert(Vector_indexOf(this->processes, p, Process_pidCompare) != -1);
-   assert(Hashtable_get(this->processTable, p->pid) != NULL);
+   ht = Hashtable_get(this->processTable, p->pid);
+   vector = Vector_indexOf(this->processes, p, Process_pidCompare);
+   assert(vector != -1);
+   assert(ht != NULL);
    assert(Hashtable_count(this->processTable) == Vector_count(this->processes));
 }
 
@@ -298,7 +303,7 @@ void ProcessList_rebuildPanel(ProcessList* this) {
 
 Process* ProcessList_getProcess(ProcessList* this, pid_t pid, bool* preExisting, Process_New constructor) {
    Process* proc = (Process*) Hashtable_get(this->processTable, pid);
-   *preExisting = proc;
+   *preExisting = (proc != NULL);
    if (proc) {
       assert(Vector_indexOf(this->processes, proc, Process_pidCompare) != -1);
       assert(proc->pid == pid);

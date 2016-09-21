@@ -15,6 +15,7 @@ in the source distribution for its full text.
 #define PROCESS_FLAG_LINUX_VSERVER  0x0400
 #define PROCESS_FLAG_LINUX_CGROUP   0x0800
 #define PROCESS_FLAG_LINUX_OOM      0x1000
+#define PROCESS_FLAG_LINUX_VIRTUALTIME 0x2000
 
 typedef enum UnsupportedProcessFields {
    FLAGS = 9,
@@ -73,7 +74,11 @@ typedef enum LinuxProcessFields {
    #endif
    OOM = 114,
    IO_PRIORITY = 115,
-   LAST_PROCESSFIELD = 116,
+   FRZ_STAT = 116,
+   TDF = 117,
+   FPT = 118,
+   VPT = 119,
+   LAST_PROCESSFIELD = 120,
 } LinuxProcessField;
 
 #include "IOPriority.h"
@@ -116,6 +121,10 @@ typedef struct LinuxProcess_ {
    char* cgroup;
    #endif
    unsigned int oom;
+   char* frz_stat;
+   unsigned int tdf;
+   char* fpt;
+   char* vpt;
 } LinuxProcess;
 
 #ifndef Process_isKernelThread

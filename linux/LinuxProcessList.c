@@ -494,72 +494,73 @@ static bool LinuxProcessList_readCmdlineFile(Process* process, const char* dirna
    return true;
 }
 
-/**
- * @dirname is '/proc' if we are at the first recursion level
- * @name is the string format of a process's pid
- * the purpurse of this set of functions is to read info in /proc/$pid to @process
- */
-static bool LinuxProcessList_readFrzS(LinuxProcess* process, const char* dirname, const char* name) {
-        char filename[MAX_NAME + 1];
-        snprintf(filename, MAX_NAME, "%s/%s/freeze", dirname, name);
-        
-        FILE* file = fopen(filename, "r");
-        if (!file) return false;
-        
-        char buffer[PROC_LINE_LENGTH + 1];
-        if (fgets(buffer, PROC_LINE_LENGTH, file) != NULL) {
-                if (process->frz_stat) free(process->frz_stat);
-                process->frz_stat = strdup(buffer);
-        }
- 
-        fclose(file);
-        return true;
+static void LinuxProcessList_readFrzS(LinuxProcess* process, const char* dirname, const char* name) {
+   if (Process_isThread(process)) {
+      process->frz_stat = strdup("XXX");
+   } else {
+      char filename[MAX_NAME + 1];
+      snprintf(filename, MAX_NAME, "%s/%s/freeze", dirname, name);
+
+      FILE* file = fopen(filename, "r");
+      if (!file) return;
+      char buffer[PROC_LINE_LENGTH + 1];
+      if (fgets(buffer, PROC_LINE_LENGTH, file) != NULL) {
+        if (process->frz_stat) free(process->frz_stat);
+        process->frz_stat = strndup(buffer, 1);
+      }
+      fclose(file);
+   }
 }
 
-static bool LinuxProcessList_readTDF(LinuxProcess* process, const char* dirname, const char* name) {
-        char filename[MAX_NAME + 1];
-        snprintf(filename, MAX_NAME, "%s/%s/dilation", dirname, name);
-        
-        FILE* file = fopen(filename, "r");
-        if (!file) return false;
-        unsigned int tdf;
-        if (fscanf(file, "%u", &tdf) >= 1) process->tdf = tdf / 1000;
-        fclose(file);
+static void LinuxProcessList_readTDF(LinuxProcess* process, const char* dirname, const char* name) {
+   char filename[MAX_NAME + 1];
+   snprintf(filename, MAX_NAME, "%s/%s/dilation", dirname, name);
 
-        return true;
+   FILE* file = fopen(filename, "r");
+   if (!file) return;
+   unsigned int tdf = 0;
+   if (fscanf(file, "%u", &tdf) >= 1) process->tdf = tdf / 1000;
+   fclose(file);
 }
 
-static bool LinuxProcessList_readFrzPT(LinuxProcess* process, const char* dirname, const char* name) {
+static void LinuxProcessList_readFrzPT(LinuxProcess* process, const char* dirname, const char* name) {
+   if (Process_isThread(process)) {
+        process->fpt = strdup("XXX");
+   } else {
         char filename[MAX_NAME + 1];
         snprintf(filename, MAX_NAME, "%s/%s/fpt", dirname, name);
 
         FILE *file = fopen(filename, "r");
-        if (!file) return false;
+        if (!file) return; 
 
         char buffer[PROC_LINE_LENGTH + 1];
         if (fgets(buffer, PROC_LINE_LENGTH, file) != NULL) {
-               if (process->fpt) free(process->fpt);
-               process->fpt = strdup(buffer);
+            if (process->fpt) free(process->fpt);
+            buffer[strcspn(buffer, "\r\n")] = '\0';
+            process->fpt = strdup(buffer);
         }
         fclose(file);
-
-        return true;
+   }
 }
 
-static bool LinuxProcessList_readVirPT(LinuxProcess* process, const char* dirname, const char* name) {
+static void LinuxProcessList_readVirPT(LinuxProcess* process, const char* dirname, const char* name) { 
+   if (Process_isThread(process)) {
+        process->vpt = strdup("XXX");
+   } else {
         char filename[MAX_NAME + 1];
         snprintf(filename, MAX_NAME, "%s/%s/vpt", dirname, name);
 
         FILE *file = fopen(filename, "r");
-        if (!file) return false;
+        if (!file) return;
 
         char buffer[PROC_LINE_LENGTH + 1];
         if (fgets(buffer, PROC_LINE_LENGTH, file) != NULL) {
-               if (process->vpt) free(process->vpt);
-               process->vpt = strdup(buffer);
+           if (process->vpt) free(process->vpt);
+           buffer[strcspn(buffer, "\r\n")] = '\0';
+           process->vpt = strdup(buffer);
         }
         fclose(file);
-        return true;
+   }
 }
 
 static bool LinuxProcessList_recurseProcTree(LinuxProcessList* this, const char* dirname, Process* parent, double period, struct timeval tv) {
@@ -674,10 +675,10 @@ static bool LinuxProcessList_recurseProcTree(LinuxProcessList* this, const char*
          LinuxProcessList_readOomData(lp, dirname, name);
 
       if (settings->flags & PROCESS_FLAG_LINUX_VIRTUALTIME) {
-         if (!LinuxProcessList_readFrzS(lp, dirname, name)) goto errorReadingProcess;
-         if (!LinuxProcessList_readTDF(lp, dirname, name)) goto errorReadingProcess;
-         if (!LinuxProcessList_readFrzPT(lp, dirname, name)) goto errorReadingProcess;
-         if (!LinuxProcessList_readVirPT(lp, dirname, name)) goto errorReadingProcess;
+         LinuxProcessList_readFrzS(lp, dirname, name);
+         LinuxProcessList_readTDF(lp, dirname, name);
+         LinuxProcessList_readFrzPT(lp, dirname, name);
+         LinuxProcessList_readVirPT(lp, dirname, name);
       }
 
       if (proc->state == 'Z' && (proc->basenameOffset == 0)) {
