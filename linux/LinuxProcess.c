@@ -23,6 +23,7 @@ in the source distribution for its full text.
 #define PROCESS_FLAG_LINUX_VSERVER  0x0400
 #define PROCESS_FLAG_LINUX_CGROUP   0x0800
 #define PROCESS_FLAG_LINUX_OOM      0x1000
+#define PROCESS_FLAG_LINUX_VIRTUALTIME 0x2000
 
 typedef enum UnsupportedProcessFields {
    FLAGS = 9,
@@ -81,7 +82,11 @@ typedef enum LinuxProcessFields {
    #endif
    OOM = 114,
    IO_PRIORITY = 115,
-   LAST_PROCESSFIELD = 116,
+   FRZ_STAT = 116,
+   TDF = 117,
+   FPT = 118,
+   VPT = 119,
+   LAST_PROCESSFIELD = 120,
 } LinuxProcessField;
 
 #include "IOPriority.h"
@@ -124,6 +129,10 @@ typedef struct LinuxProcess_ {
    char* cgroup;
    #endif
    unsigned int oom;
+   char* frz_stat;
+   unsigned int tdf;
+   char* fpt;
+   char* vpt;
 } LinuxProcess;
 
 #ifndef Process_isKernelThread
@@ -214,6 +223,10 @@ ProcessFieldData Process_fields[] = {
 #endif
    [OOM] = { .name = "OOM", .title = "    OOM ", .description = "OOM (Out-of-Memory) killer score", .flags = PROCESS_FLAG_LINUX_OOM, },
    [IO_PRIORITY] = { .name = "IO_PRIORITY", .title = "IO ", .description = "I/O priority", .flags = PROCESS_FLAG_LINUX_IOPRIO, },
+   [FRZ_STAT] = { .name = "FRZ_STAT", .title = "  FRZ_STAT ", .description = "Freeze status", .flags = PROCESS_FLAG_LINUX_VIRTUALTIME, },
+   [TDF] = { .name = "TDF", .title = "  TDF  ", .description = "Time dilation factor", .flags = PROCESS_FLAG_LINUX_VIRTUALTIME, },
+   [FPT] = { .name = "FPT", .title = "  FPT  ", .description = "Freeze past time", .flags = PROCESS_FLAG_LINUX_VIRTUALTIME, },
+   [VPT] = { .name = "VPT", .title = "  VPT  ", .description = "Virtual past time", .flags = PROCESS_FLAG_LINUX_VIRTUALTIME, },
    [LAST_PROCESSFIELD] = { .name = "*** report bug! ***", .title = NULL, .description = NULL, .flags = 0, },
 };
 
@@ -331,6 +344,10 @@ void LinuxProcess_writeField(Process* this, RichString* str, ProcessField field)
    case CGROUP: snprintf(buffer, n, "%-10s ", lp->cgroup); break;
    #endif
    case OOM: snprintf(buffer, n, Process_pidFormat, lp->oom); break;
+   case FRZ_STAT: snprintf(buffer, n, "%s", lp->frz_stat); break;
+   case TDF: snprintf(buffer, n, "%5u", lp->tdf); break;
+   case FPT: snprintf(buffer, n, "%s", lp->fpt); break;
+   case VPT: snprintf(buffer, n, "%s", lp->vpt); break;
    case IO_PRIORITY: {
       int klass = IOPriority_class(lp->ioPriority);
       if (klass == IOPRIO_CLASS_NONE) {
