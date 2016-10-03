@@ -136,19 +136,14 @@ void ProcessList_printHeader(ProcessList* this, RichString* header) {
 }
 
 void ProcessList_add(ProcessList* this, Process* p) {
-   void* ht = Hashtable_get(this->processTable, p->pid);
-   int vector = Vector_indexOf(this->processes, p, Process_pidCompare);
-
-   assert(vector == -1);
-   assert(ht == NULL);
+   assert(Vector_indexOf(this->processes, p, Process_pidCompare) == -1);
+   assert(Hashtable_get(this->processTable, p->pid) == NULL);
  
    Vector_add(this->processes, p);
    Hashtable_put(this->processTable, p->pid, p);
    
-   ht = Hashtable_get(this->processTable, p->pid);
-   vector = Vector_indexOf(this->processes, p, Process_pidCompare);
-   assert(vector != -1);
-   assert(ht != NULL);
+   assert(Vector_indexOf(this->processes, p, Process_pidCompare) != -1);
+   assert(Hashtable_get(this->processTable, p->pid) != NULL);
    assert(Hashtable_count(this->processTable) == Vector_count(this->processes));
 }
 

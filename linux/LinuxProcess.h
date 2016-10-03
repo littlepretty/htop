@@ -78,7 +78,8 @@ typedef enum LinuxProcessFields {
    TDF = 117,
    FPT = 118,
    VPT = 119,
-   LAST_PROCESSFIELD = 120,
+   PPT = 120,
+   LAST_PROCESSFIELD = 121,
 } LinuxProcessField;
 
 #include "IOPriority.h"
@@ -125,6 +126,7 @@ typedef struct LinuxProcess_ {
    unsigned int tdf;
    char* fpt;
    char* vpt;
+   char* ppt;
 } LinuxProcess;
 
 #ifndef Process_isKernelThread

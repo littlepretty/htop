@@ -496,7 +496,7 @@ static bool LinuxProcessList_readCmdlineFile(Process* process, const char* dirna
 
 static void LinuxProcessList_readFrzS(LinuxProcess* process, const char* dirname, const char* name) {
    if (Process_isThread(process)) {
-      process->frz_stat = strdup("XXX");
+      process->frz_stat = strdup("N/A");
    } else {
       char filename[MAX_NAME + 1];
       snprintf(filename, MAX_NAME, "%s/%s/freeze", dirname, name);
@@ -525,41 +525,61 @@ static void LinuxProcessList_readTDF(LinuxProcess* process, const char* dirname,
 
 static void LinuxProcessList_readFrzPT(LinuxProcess* process, const char* dirname, const char* name) {
    if (Process_isThread(process)) {
-        process->fpt = strdup("XXX");
+      process->fpt = strdup("N/A");
    } else {
-        char filename[MAX_NAME + 1];
-        snprintf(filename, MAX_NAME, "%s/%s/fpt", dirname, name);
-
-        FILE *file = fopen(filename, "r");
-        if (!file) return; 
-
-        char buffer[PROC_LINE_LENGTH + 1];
-        if (fgets(buffer, PROC_LINE_LENGTH, file) != NULL) {
-            if (process->fpt) free(process->fpt);
-            buffer[strcspn(buffer, "\r\n")] = '\0';
-            process->fpt = strdup(buffer);
-        }
-        fclose(file);
+      char filename[MAX_NAME + 1];
+      snprintf(filename, MAX_NAME, "%s/%s/fpt", dirname, name);
+      
+      FILE *file = fopen(filename, "r");
+      if (!file) return;
+      
+      char buffer[PROC_LINE_LENGTH + 1];
+      if (fgets(buffer, PROC_LINE_LENGTH, file) != NULL) {
+         if (process->fpt) free(process->fpt);
+         buffer[strcspn(buffer, "\r\n")] = '\0';
+         process->fpt = strdup(buffer);
+      }
+      fclose(file);
    }
 }
 
 static void LinuxProcessList_readVirPT(LinuxProcess* process, const char* dirname, const char* name) { 
    if (Process_isThread(process)) {
-        process->vpt = strdup("XXX");
+      process->vpt = strdup("N/A");
    } else {
-        char filename[MAX_NAME + 1];
-        snprintf(filename, MAX_NAME, "%s/%s/vpt", dirname, name);
+      char filename[MAX_NAME + 1];
+      snprintf(filename, MAX_NAME, "%s/%s/vpt", dirname, name);
+      
+      FILE *file = fopen(filename, "r");
+      if (!file) return;
+      
+      char buffer[PROC_LINE_LENGTH + 1];
+      if (fgets(buffer, PROC_LINE_LENGTH, file) != NULL) {
+         if (process->vpt) free(process->vpt);
+         buffer[strcspn(buffer, "\r\n")] = '\0';
+         process->vpt = strdup(buffer);
+      }
+      fclose(file);
+   }
+}
 
-        FILE *file = fopen(filename, "r");
-        if (!file) return;
+static void LinuxProcessList_readPhyPT(LinuxProcess* process, const char* dirname, const char* name) { 
+   if (Process_isThread(process)) {
+      process->ppt = strdup("N/A");
+   } else {
+      char filename[MAX_NAME + 1];
+      snprintf(filename, MAX_NAME, "%s/%s/ppt", dirname, name);
 
-        char buffer[PROC_LINE_LENGTH + 1];
-        if (fgets(buffer, PROC_LINE_LENGTH, file) != NULL) {
-           if (process->vpt) free(process->vpt);
-           buffer[strcspn(buffer, "\r\n")] = '\0';
-           process->vpt = strdup(buffer);
-        }
-        fclose(file);
+      FILE *file = fopen(filename, "r");
+      if (!file) return;
+      
+      char buffer[PROC_LINE_LENGTH + 1];
+      if (fgets(buffer, PROC_LINE_LENGTH, file) != NULL) {
+         if (process->ppt) free(process->ppt);
+         buffer[strcspn(buffer, "\r\n")] = '\0';
+         process->ppt = strdup(buffer);
+      }
+      fclose(file);
    }
 }
 
@@ -679,6 +699,7 @@ static bool LinuxProcessList_recurseProcTree(LinuxProcessList* this, const char*
          LinuxProcessList_readTDF(lp, dirname, name);
          LinuxProcessList_readFrzPT(lp, dirname, name);
          LinuxProcessList_readVirPT(lp, dirname, name);
+         LinuxProcessList_readPhyPT(lp, dirname, name);
       }
 
       if (proc->state == 'Z' && (proc->basenameOffset == 0)) {

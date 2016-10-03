@@ -86,7 +86,8 @@ typedef enum LinuxProcessFields {
    TDF = 117,
    FPT = 118,
    VPT = 119,
-   LAST_PROCESSFIELD = 120,
+   PPT = 120,
+   LAST_PROCESSFIELD = 121,
 } LinuxProcessField;
 
 #include "IOPriority.h"
@@ -133,6 +134,7 @@ typedef struct LinuxProcess_ {
    unsigned int tdf;
    char* fpt;
    char* vpt;
+   char* ppt;
 } LinuxProcess;
 
 #ifndef Process_isKernelThread
@@ -227,6 +229,7 @@ ProcessFieldData Process_fields[] = {
    [TDF] = { .name = "TDF", .title = " TDF ", .description = "Time dilation factor", .flags = PROCESS_FLAG_LINUX_VIRTUALTIME, },
    [FPT] = { .name = "FPT", .title = "  FPT ", .description = "Freeze past time", .flags = PROCESS_FLAG_LINUX_VIRTUALTIME, },
    [VPT] = { .name = "VPT", .title = "  VPT ", .description = "Virtual past time", .flags = PROCESS_FLAG_LINUX_VIRTUALTIME, },
+   [PPT] = { .name = "PPT", .title = "  PPT ", .description = "Physical past time", .flags = PROCESS_FLAG_LINUX_VIRTUALTIME, },
    [LAST_PROCESSFIELD] = { .name = "*** report bug! ***", .title = NULL, .description = NULL, .flags = 0, },
 };
 
@@ -348,6 +351,7 @@ void LinuxProcess_writeField(Process* this, RichString* str, ProcessField field)
    case TDF: snprintf(buffer, n, "%4u ", lp->tdf); break;
    case FPT: snprintf(buffer, n, "%5s ", lp->fpt); break;
    case VPT: snprintf(buffer, n, "%5s ", lp->vpt); break;
+   case PPT: snprintf(buffer, n, "%5s ", lp->ppt); break;
    case IO_PRIORITY: {
       int klass = IOPriority_class(lp->ioPriority);
       if (klass == IOPRIO_CLASS_NONE) {
